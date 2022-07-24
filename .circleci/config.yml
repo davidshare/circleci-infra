@@ -2,31 +2,26 @@ version: '2.1'
 orbs:
   aws-cli: circleci/aws-cli@2.0
 jobs:
-  aws-cli-cred-setup:
+  create_infrastructure:
     executor: aws-cli/default
     steps:
       - aws-cli/setup:
           aws-access-key-id: AWS_ACCESS_KEY_ID
           aws-secret-access-key: AWS_SECRET_ACCESS_KEY
           aws-region: AWS_DEFAULT_REGION
-
-  create_infrastructure: 
-    docker:
-      - image: cimg/aws:2022.06
-    steps:
       - checkout
       - run:
           name: Create Cloudformation Stack
           command: |
-            aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
-            aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
+            cat ~/.aws/credentials
+            cat ~/.aws/config
             aws cloudformation deploy \
               --template-file ec2.yml \
               --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
               --region us-east-1
+      
 # Sequential workflow
 workflows:
   aws-cli:
     jobs:
-      - aws-cli-cred-setup
       - create_infrastructure
