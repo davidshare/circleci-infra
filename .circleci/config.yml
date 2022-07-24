@@ -8,7 +8,7 @@ orbs:
 jobs:
   create_infrastructure: 
     docker:
-      - image: cimg/aws
+      - image: cimg/aws:2022.06
     steps:
       - checkout
       - run:
