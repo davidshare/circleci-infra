@@ -15,7 +15,7 @@ jobs:
               --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
               --region us-east-1
 
-  ec2_instance_ip:
+  get_ec2_instance_ip:
     docker:
       - image: amazon/aws-cli
     steps:
@@ -48,4 +48,9 @@ workflows:
   aws-cli:
     jobs:
       - create_infrastructure
-      - configure_infrastructure
+      - get_ec2_instance_ip:
+          requires:
+            - create_infrastructure
+      - configure_infrastructure:
+          requires:
+            - get_ec2_instance_ip
