@@ -27,13 +27,20 @@ jobs:
               --filters 'Name=tag:Project,Values=udacity' \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text >> inventory
-            ls -al
-            cat inventory
+            pwd
+      - save_cache:
+          key: "ansible"
+          paths:
+            - .
 
   configure_infrastructure: 
     docker:
       - image: python:3.7-alpine3.11
     steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - "ansible"
       - add_ssh_keys:
           # You can get this ID in the section where you registered the SSH Key
           fingerprints: ["0d:db:2c:31:a3:4c:be:2a:2d:31:9d:37:89:fa:f4:ed"] 
