@@ -21,10 +21,12 @@ jobs:
     steps:
       - checkout
       - run:
-          aws ec2 describe-instances \
-            --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --filters "Name=tag:Project,Values=udacity" \
-            --output text >> inventory
+          name: Get the ip address of the ec2 instance
+          command: |
+            aws ec2 describe-instances \
+              --filters 'Name=tag:Project,Values=udacity' \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text >> inventory
 
   configure_infrastructure: 
     docker:
