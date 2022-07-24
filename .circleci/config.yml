@@ -1,6 +1,5 @@
 version: 2.1
-
-jobs:
+commands:
   destroy_environment:
     steps:
       - run:
@@ -9,6 +8,7 @@ jobs:
           command: |
             aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5}
 
+jobs:
   create_infrastructure: 
     docker:
       - image: amazon/aws-cli
@@ -42,6 +42,7 @@ jobs:
           key: "ansible"
           paths:
             - .
+      - destroy_environment
 
   configure_infrastructure: 
     docker:
@@ -62,10 +63,11 @@ jobs:
           name: Run Playbook and Configure server
           command: |
             ansible-playbook -i inventory main.yml 
+      - destroy_environment
       
 # Sequential workflow
 workflows:
-  aws-cli:
+  ec2-ansible:
     jobs:
       - create_infrastructure
       - get_ec2_instance_ip:
