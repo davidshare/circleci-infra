@@ -8,7 +8,7 @@ orbs:
 jobs:
   create_infrastructure: 
     docker:
-      - image: amazon/aws-cli
+      - image: cimg/aws
     steps:
       - checkout
       - run:
