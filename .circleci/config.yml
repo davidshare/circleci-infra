@@ -25,9 +25,9 @@ jobs:
           command: |
             aws ec2 describe-instances \
               --filters 'Name=tag:Project,Values=udacity' \
-              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --query 'Reservations[*].Instances[*].PublicDnsName' \
               --output text >> inventory
-            pwd
+            cat inventory
       - save_cache:
           key: "ansible"
           paths:
