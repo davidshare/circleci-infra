@@ -25,6 +25,7 @@ jobs:
           command: |
             aws ec2 describe-instances \
               --filters 'Name=tag:Project,Values=udacity' \
+                'Name=instance-state-name,Values=running' \
               --query 'Reservations[*].Instances[*].PublicDnsName' \
               --output text >> inventory
             cat inventory
