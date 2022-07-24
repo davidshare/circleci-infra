@@ -1,0 +1,6 @@
+---
+- name: EC2-Webserver
+  hosts: all
+  user: ubuntu
+  roles:
+    - setup

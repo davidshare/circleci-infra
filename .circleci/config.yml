@@ -1,22 +1,51 @@
-version: '2.1'
-orbs:
+version: 2.1
+
 jobs:
   create_infrastructure: 
-      docker:
-        - image: amazon/aws-cli
-      steps:
-        - checkout
-        - run:
-            name: Create Cloudformation Stack
-            command: |
-              aws configure set aws_session_token "${AWS_SESSION_TOKEN}"
-              aws cloudformation deploy \
-                --template-file ec2.yml \
-                --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
-                --region us-east-1
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Create Cloudformation Stack
+          command: |
+            aws configure set aws_session_token "${AWS_SESSION_TOKEN}"
+            aws cloudformation deploy \
+              --template-file ec2.yml \
+              --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
+              --region us-east-1
+              
+  ec2_instance_ip:
+    docker:
+      -image: 
+    steps:
+      - checkout
+      - run:
+          aws ec2 describe-instances \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --filters "Name=tag:Project,Values=udacity" \
+            --output text >> inventory
+
+  configure_infrastructure: 
+    docker:
+      - image: 
+    steps:
+      - checkout
+      - add_ssh_keys:
+          # You can get this ID in the section where you registered the SSH Key
+          fingerprints: ["0d:db:2c:31:a3:4c:be:2a:2d:31:9d:37:89:fa:f4:ed"] 
+      - run:
+          name: Install Ansible
+          command: |
+            apt-get install ansible -y
+      - run:
+          name: Run Playbook and Configure server
+          command: |
+            ansible-playbook -i inventory main.yml 
       
 # Sequential workflow
 workflows:
   aws-cli:
     jobs:
       - create_infrastructure
+      - configure_infrastructure
