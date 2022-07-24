@@ -16,6 +16,7 @@ jobs:
           command: |
             aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
             aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
+            cat ~/.aws/credentials
             aws cloudformation deploy \
               --template-file ec2.yml \
               --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
