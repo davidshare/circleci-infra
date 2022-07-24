@@ -14,7 +14,7 @@ jobs:
       - run:
           name: Create Cloudformation Stack
           command: |
-            printenv
+            aws sts get-caller-identity
             aws cloudformation deploy \
               --template-file ec2.yml \
               --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
