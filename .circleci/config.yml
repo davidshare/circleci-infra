@@ -9,6 +9,7 @@ commands:
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
             sudo ./aws/install
+          when: on_fail
 
   destroy_environment:
     steps:
@@ -16,6 +17,7 @@ commands:
           name: Destroy environment
           command: |
             aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5}
+          when: on_fail
 
   
 jobs:
@@ -33,7 +35,6 @@ jobs:
               --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
               --region us-east-1
       - destroy_environment
-        when: on_fail
 
   get_ec2_instance_ip:
     docker:
@@ -54,9 +55,7 @@ jobs:
           root: .
           paths:
             - .
-      - destroy_environment
-        when: on_fail
-      
+      - destroy_environment      
 
   configure_infrastructure: 
     environment:
@@ -79,12 +78,10 @@ jobs:
       - run:
           name: Run Playbook and Configure server
           command: |
-            ansible-playbook -i inventory main.yml -vvv
+            ansible-playbook -i inventory main.yml
       - install_awscli
-        when: on_fail
       - destroy_environment
-        when: on_fail
-  
+
   smoke_test:
     docker:
       - image: alpine:latest
@@ -93,7 +90,7 @@ jobs:
       - run:
           name: smoke test
           command: |
-            URL="https://blog.udacity.com/"
+            URL="https://blog.udacity33.com/"
             # Test if website exists
             if curl -s --head ${URL} 
             then
@@ -101,9 +98,11 @@ jobs:
             else
               return 1
             fi
-
+      - run: 
+          command: | 
+            apk add --no-cache aws-cli
+          when: on_fail
       - destroy_environment
-        when: on_fail
 
       
 # Sequential workflow
