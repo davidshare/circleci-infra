@@ -1,4 +1,4 @@
-# version: 2.1
+version: 2.1
 # commands:
 #   install_awscli:
 #     description: Install AWS CLI
@@ -19,7 +19,7 @@
 #             aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5}
 
   
-# jobs:
+jobs:
 #   create_infrastructure: 
 #     docker:
 #       - image: amazon/aws-cli
