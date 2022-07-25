@@ -1,85 +1,89 @@
 version: 2.1
-# commands:
-#   install_awscli:
-#     description: Install AWS CLI
-#     steps:
-#       - run:
-#           name: Install AWS CLI v2
-#           command: |
-#             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-#             unzip awscliv2.zip
-#             sudo ./aws/install
+commands:
+  install_awscli:
+    description: Install AWS CLI
+    steps:
+      - run:
+          name: Install AWS CLI v2
+          command: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
 
-#   destroy_environment:
-#     steps:
-#       - run:
-#           name: Destroy environment
-#           when: on_fail
-#           command: |
-#             aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5}
+  destroy_environment:
+    steps:
+      - run:
+          name: Destroy environment
+          command: |
+            aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5}
 
   
 jobs:
-#   create_infrastructure: 
-#     docker:
-#       - image: amazon/aws-cli
-#     steps:
-#       - checkout
-#       - run:
-#           name: Create Cloudformation Stack
-#           command: |
-#             aws configure set aws_session_token "${AWS_SESSION_TOKEN}"
-#             aws cloudformation deploy \
-#               --template-file ec2.yml \
-#               --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
-#               --region us-east-1
-#       - destroy_environment
+  create_infrastructure: 
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Create Cloudformation Stack
+          command: |
+            aws configure set aws_session_token "${AWS_SESSION_TOKEN}"
+            aws cloudformation deploy \
+              --template-file ec2.yml \
+              --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
+              --region us-east-1
+      - destroy_environment
+        when: on_fail
 
-#   get_ec2_instance_ip:
-#     docker:
-#       - image: amazon/aws-cli
-#     steps:
-#       - checkout
-#       - run: yum install -y tar gzip
-#       - run:
-#           name: Get the ip address of the ec2 instance
-#           command: |
-#             aws ec2 describe-instances \
-#               --filters 'Name=tag:Project,Values=udacity' \
-#                 'Name=instance-state-name,Values=running' \
-#               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-#               --output text >> inventory
-#             cat inventory
-#       - persist_to_workspace:
-#           root: .
-#           paths:
-#             - .
-#       - destroy_environment
+  get_ec2_instance_ip:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run: yum install -y tar gzip
+      - run:
+          name: Get the ip address of the ec2 instance
+          command: |
+            aws ec2 describe-instances \
+              --filters 'Name=tag:Project,Values=udacity' \
+                'Name=instance-state-name,Values=running' \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text >> inventory
+            cat inventory
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+      - destroy_environment
+        when: on_fail
       
 
-#   configure_infrastructure: 
-#     environment:
-#       - ANSIBLE_HOST_KEY_CHECKING: False
-#     docker:
-#       - image: python:3.7-alpine3.11
-#     steps:
-#       - checkout
-#       - run: ls -al
-#       - attach_workspace:
-#           at: ./
-#       - add_ssh_keys:
-#           # You can get this ID in the section where you registered the SSH Key
-#           fingerprints: ["0d:db:2c:31:a3:4c:be:2a:2d:31:9d:37:89:fa:f4:ed"] 
-#       - run:
-#           name: Install Ansible
-#           command: |
-#             apk add --update ansible
-#             apk add openssh
-#       - run:
-#           name: Run Playbook and Configure server
-#           command: |
-#             ansible-playbook -i inventory main.yml -vvv
-#       - destroy_environment
+  configure_infrastructure: 
+    environment:
+      - ANSIBLE_HOST_KEY_CHECKING: False
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - run: ls -al
+      - attach_workspace:
+          at: ./
+      - add_ssh_keys:
+          # You can get this ID in the section where you registered the SSH Key
+          fingerprints: ["0d:db:2c:31:a3:4c:be:2a:2d:31:9d:37:89:fa:f4:ed"] 
+      - run:
+          name: Install Ansible
+          command: |
+            apk add --update ansible
+            apk add openssh
+      - run:
+          name: Run Playbook and Configure server
+          command: |
+            ansible-playbook -i inventory main.yml -vvv
+      - install_awscli
+        when: on_fail
+      - destroy_environment
+        when: on_fail
   
   smoke_test:
     docker:
@@ -98,16 +102,21 @@ jobs:
               return 1
             fi
 
+      - destroy_environment
+        when: on_fail
+
       
 # Sequential workflow
 workflows:
   ec2-ansible:
     jobs:
-      # - create_infrastructure
-      # - get_ec2_instance_ip:
-      #     requires:
-      #       - create_infrastructure
-      # - configure_infrastructure:
-      #     requires:
-      #       - get_ec2_instance_ip
-      - smoke_test
+      - create_infrastructure
+      - get_ec2_instance_ip:
+          requires:
+            - create_infrastructure
+      - configure_infrastructure:
+          requires:
+            - get_ec2_instance_ip
+      - smoke_test:
+          requires:
+            - configure_infrastructure
