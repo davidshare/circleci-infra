@@ -20,49 +20,49 @@ commands:
 
   
 jobs:
-  create_infrastructure: 
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - checkout
-      - run:
-          name: Create Cloudformation Stack
-          command: |
-            aws configure set aws_session_token "${AWS_SESSION_TOKEN}"
-            aws cloudformation deploy \
-              --template-file ec2.yml \
-              --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
-              --region us-east-1
-      - destroy_environment
+  # create_infrastructure: 
+  #   docker:
+  #     - image: amazon/aws-cli
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: Create Cloudformation Stack
+  #         command: |
+  #           aws configure set aws_session_token "${AWS_SESSION_TOKEN}"
+  #           aws cloudformation deploy \
+  #             --template-file ec2.yml \
+  #             --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
+  #             --region us-east-1
+  #     - destroy_environment
 
-  get_ec2_instance_ip:
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - checkout
-      - run:
-          name: Get the ip address of the ec2 instance
-          command: |
-            aws ec2 describe-instances \
-              --filters 'Name=tag:Project,Values=udacity' \
-                'Name=instance-state-name,Values=running' \
-              --query 'Reservations[*].Instances[*].PublicDnsName' \
-              --output text >> inventory
-            cat inventory
-      - save_cache:
-          key: ansible-${CIRCLE_WORKFLOW_ID:0:5}
-          paths:
-            - .
-      - destroy_environment
+  # get_ec2_instance_ip:
+  #   docker:
+  #     - image: amazon/aws-cli
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: Get the ip address of the ec2 instance
+  #         command: |
+  #           aws ec2 describe-instances \
+  #             --filters 'Name=tag:Project,Values=udacity' \
+  #               'Name=instance-state-name,Values=running' \
+  #             --query 'Reservations[*].Instances[*].PublicDnsName' \
+  #             --output text >> inventory
+  #           cat inventory
+  #     - save_cache:
+  #         key: ansible-${CIRCLE_WORKFLOW_ID:0:5}
+  #         paths:
+  #           - .
+  #     - destroy_environment
 
   configure_infrastructure: 
     docker:
       - image: python:3.7-alpine3.11
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - ansible-${CIRCLE_WORKFLOW_ID:0:5}
+      # - restore_cache:
+      #     keys:
+      #       - ansible-${CIRCLE_WORKFLOW_ID:0:5}
       - add_ssh_keys:
           # You can get this ID in the section where you registered the SSH Key
           fingerprints: ["0d:db:2c:31:a3:4c:be:2a:2d:31:9d:37:89:fa:f4:ed"] 
@@ -73,17 +73,17 @@ jobs:
       - run:
           name: Run Playbook and Configure server
           command: |
-            ansible-playbook -i inventory main.yml 
+            ansible-playbook -i inventory main.yml -vvv
       - destroy_environment
       
 # Sequential workflow
 workflows:
   ec2-ansible:
     jobs:
-      - create_infrastructure
-      - get_ec2_instance_ip:
-          requires:
-            - create_infrastructure
-      - configure_infrastructure:
-          requires:
-            - get_ec2_instance_ip
+      # - create_infrastructure
+      - get_ec2_instance_ip
+          # requires:
+          #   - create_infrastructure
+      - configure_infrastructure
+          # requires:
+          #   - get_ec2_instance_ip
