@@ -40,6 +40,7 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
+      - run: yum install -y tar gzip
       - run:
           name: Get the ip address of the ec2 instance
           command: |
@@ -49,12 +50,11 @@ jobs:
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text >> inventory
             cat inventory
-      - run: ls -al
-      - destroy_environment
       - persist_to_workspace:
           root: .
           paths:
             - .
+      - destroy_environment
       
 
   configure_infrastructure: 
